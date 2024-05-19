@@ -22,6 +22,8 @@ which will produce
 
 The program requires a path to a sqlite database to function, it will create the database specified if it doesn't already exist. I recomend a bash alias
 
+    alias lpm='a/b/c/target/release/littlepasswordmanager /somewhere/safe/lpm.sqlite3'
+
 # Unit Tests
 
 test with

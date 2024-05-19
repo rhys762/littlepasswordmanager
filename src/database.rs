@@ -8,11 +8,12 @@
 */
 
 // denotes an entry in the database.
+#[derive(Clone)]
 pub struct Password {
     // website, app etc
-    domain: String,
+    pub domain: String,
     // the actuall password
-    password: String,
+    pub password: String,
 }
 
 // create the tables if they do not exist
