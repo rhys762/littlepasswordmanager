@@ -29,6 +29,7 @@ struct AppState {
     error: String,
     // pattern to match to domain
     search: String,
+    searchResults: Vec<database::Password>,
     // most recent search result
     passwords: Vec<database::Password>,
     // for adding new password
@@ -79,6 +80,7 @@ fn main() {
                 password: String::new(),
                 error: String::new(),
                 search: String::new(),
+                searchResults: Vec::new(),
                 passwords: Vec::new(),
                 newDomain: String::new(),
                 newPassword: String::new()
@@ -94,16 +96,19 @@ fn main() {
     );
 }
 
-// TODO
 fn load_passwords(conn: &sqlite::Connection, master: &String) -> Vec<database::Password> {
-    // TODO encryption
-    return database::get_passwords(&conn);
+    let passwords = database::get_passwords(&conn);
+
+    let passwords = passwords.iter().map(|p| {
+        return encrypt::decrypt_password(master, p);
+    });
+
+    return Vec::from_iter(passwords);
 }
 
-// TODO
 fn save_password(conn: &sqlite::Connection, master: &String, p: database::Password) {
-    // TODO encryption
-    database::update_password(&conn, &p);
+    let password = encrypt::encrypt_password(master, &p);
+    database::update_password(&conn, &password);
 }
 
 impl eframe::App for AppState {
@@ -149,6 +154,7 @@ impl eframe::App for AppState {
                     if hashed_password == master {
                         self.master_password = self.password.clone();
                         self.passwords = load_passwords(&self.conn, &self.master_password);
+                        self.searchResults = self.passwords.clone();
                         self.page = AppPage::ViewPasswords;
                         self.error = String::new();
                     } else {
@@ -168,9 +174,6 @@ impl eframe::App for AppState {
                 let entry = ui.text_edit_singleline(&mut self.search)
                     .labelled_by(label_search.id);
                 if entry.changed() {
-                    // TODO string distance etc
-                    self.passwords = load_passwords(&self.conn, &self.master_password);
-
                     if self.search.len() > 0 {
                         let mut passwords = Vec::from_iter(self.passwords.iter().map(|p| {
                             (p, levenshtein::levenshtein(&self.search, &p.domain))
@@ -180,13 +183,15 @@ impl eframe::App for AppState {
                             return a.1.cmp(&b.1);
                         });
 
-                        self.passwords = Vec::from_iter(passwords.iter().map(|pair| {
+                        self.searchResults = Vec::from_iter(passwords.iter().map(|pair| {
                             return pair.0.clone();
                         }));
+                    } else {
+                        self.searchResults = self.passwords.clone();
                     }
                 }
 
-                for p in &self.passwords {
+                for p in &self.searchResults {
                     ui.label(&p.domain);
                     ui.label(&p.password);
                 }
@@ -214,13 +219,15 @@ impl eframe::App for AppState {
                         domain: self.newDomain.clone(),
                         password: self.newPassword.clone()
                     };
+                    self.passwords.push(p.clone());
+                    // ideally this wouldn't block.
                     save_password(&self.conn, &self.master_password, p);
 
                     self.newDomain = String::new();
                     self.newPassword = String::new();
 
-                    self.passwords = load_passwords(&self.conn, &self.master_password);
                     self.search = String::new();
+                    self.searchResults = self.passwords.clone();
 
                     self.error = String::new();
                     self.page = AppPage::ViewPasswords;
