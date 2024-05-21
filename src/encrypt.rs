@@ -2,6 +2,7 @@ use crate::database;
 
 use age::secrecy::Secret;
 use std::io::{Read, Write};
+use rand::Rng;
 
 pub fn hash_password(password: &String) -> String {
     return sha256::digest(password);
@@ -12,8 +13,8 @@ fn encrypt(master: &String, raw: &String) -> String {
 
     let mut encrypted = vec![];
     let mut writer = encryptor.wrap_output(&mut encrypted).expect("");
-    writer.write_all(raw.as_bytes());
-    writer.finish();
+    let _ = writer.write_all(raw.as_bytes());
+    let _ = writer.finish();
 
     // return as space seperated numbers.
     let mut out = String::new();
@@ -46,7 +47,7 @@ fn decrypt(master: &String, encrypted: &String) -> String {
 
     let mut decrypted = vec![];
     let mut reader = decryptor.decrypt(&Secret::new(master.to_owned()), None).expect("");
-    reader.read_to_end(&mut decrypted);
+    let _ = reader.read_to_end(&mut decrypted);
 
     String::from_utf8(decrypted).expect("")
 }
@@ -63,6 +64,28 @@ pub fn decrypt_password(master: &String, password: & database::Password) -> data
         domain: decrypt(master, &password.domain),
         password: decrypt(master, &password.password)
     };
+}
+
+fn random_char() -> char {
+    let choices = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRTSTUVWXYZ!@#$%^&*.?";
+    let mut rng = rand::thread_rng();
+    let i = rng.gen_range(0..choices.len());
+    let char = choices.chars().nth(i);
+    return char.expect("");
+}
+
+pub fn random_password() -> String {
+    let mut out = String::new();
+
+    let mut rng = rand::thread_rng();
+
+    let len = rng.gen_range(10..20);
+
+    for _ in 0..len {
+        out.push(random_char());
+    }
+
+    return out;
 }
 
 #[cfg(test)]

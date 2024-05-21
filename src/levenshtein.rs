@@ -12,7 +12,7 @@ pub fn levenshtein(a: &String, b: &String) -> u32 {
         return b.len().try_into().expect("no convert");
     }
 
-    if (b.len() == 0) {
+    if b.len() == 0 {
         return a.len().try_into().expect("no convert");
     }
 

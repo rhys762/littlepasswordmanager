@@ -1,6 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
-use eframe::App;
 use egui::{Color32, RichText};
 
 mod encrypt;
@@ -29,12 +28,12 @@ struct AppState {
     error: String,
     // pattern to match to domain
     search: String,
-    searchResults: Vec<database::Password>,
+    search_results: Vec<database::Password>,
     // most recent search result
     passwords: Vec<database::Password>,
     // for adding new password
-    newDomain: String,
-    newPassword: String
+    new_domain: String,
+    new_password: String
 }
 
 fn main() {
@@ -67,7 +66,7 @@ fn main() {
     let _ = eframe::run_native(
         "My egui App",
         options,
-        Box::new(|cc| {
+        Box::new(|_cc| {
             // This gives us image support:
             // egui_extras::install_image_loaders(&cc.egui_ctx);
 
@@ -80,10 +79,10 @@ fn main() {
                 password: String::new(),
                 error: String::new(),
                 search: String::new(),
-                searchResults: Vec::new(),
+                search_results: Vec::new(),
                 passwords: Vec::new(),
-                newDomain: String::new(),
-                newPassword: String::new()
+                new_domain: String::new(),
+                new_password: String::new()
             };
 
             // if master password already set, can go to login
@@ -154,7 +153,7 @@ impl eframe::App for AppState {
                     if hashed_password == master {
                         self.master_password = self.password.clone();
                         self.passwords = load_passwords(&self.conn, &self.master_password);
-                        self.searchResults = self.passwords.clone();
+                        self.search_results = self.passwords.clone();
                         self.page = AppPage::ViewPasswords;
                         self.error = String::new();
                     } else {
@@ -183,15 +182,15 @@ impl eframe::App for AppState {
                             return a.1.cmp(&b.1);
                         });
 
-                        self.searchResults = Vec::from_iter(passwords.iter().map(|pair| {
+                        self.search_results = Vec::from_iter(passwords.iter().map(|pair| {
                             return pair.0.clone();
                         }));
                     } else {
-                        self.searchResults = self.passwords.clone();
+                        self.search_results = self.passwords.clone();
                     }
                 }
 
-                for p in &self.searchResults {
+                for p in &self.search_results {
                     ui.label(&p.domain);
                     ui.label(&p.password);
                 }
@@ -207,27 +206,31 @@ impl eframe::App for AppState {
                 }
 
                 let label_domain = ui.label("Domain:");
-                ui.text_edit_singleline(&mut self.newDomain)
+                ui.text_edit_singleline(&mut self.new_domain)
                     .labelled_by(label_domain.id);
 
                 let label_password = ui.label("Password:");
-                ui.text_edit_singleline(&mut self.newPassword)
+                ui.text_edit_singleline(&mut self.new_password)
                     .labelled_by(label_password.id);
+            
+                if ui.button("Create random password").clicked() {
+                    self.new_password = encrypt::random_password();
+                }
 
                 if ui.button("Create").clicked() {
                     let p = database::Password {
-                        domain: self.newDomain.clone(),
-                        password: self.newPassword.clone()
+                        domain: self.new_domain.clone(),
+                        password: self.new_password.clone()
                     };
                     self.passwords.push(p.clone());
                     // ideally this wouldn't block.
                     save_password(&self.conn, &self.master_password, p);
 
-                    self.newDomain = String::new();
-                    self.newPassword = String::new();
+                    self.new_domain = String::new();
+                    self.new_password = String::new();
 
                     self.search = String::new();
-                    self.searchResults = self.passwords.clone();
+                    self.search_results = self.passwords.clone();
 
                     self.error = String::new();
                     self.page = AppPage::ViewPasswords;

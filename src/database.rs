@@ -41,7 +41,7 @@ pub fn get_master_passwordhash(conn: &sqlite::Connection) -> String {
     let mut hash = String::new();
 
     conn.iterate(query, |pairs| {
-        for &(name, value) in pairs.iter() {
+        for &(_name, value) in pairs.iter() {
             // println!("{} = {}", name, value.unwrap());
             hash = String::from(value.expect("Could not extract master password hash."));
         }
@@ -95,9 +95,9 @@ pub fn get_passwords(conn: &sqlite::Connection) -> Vec<Password> {
 
         for &(name, value) in pairs.iter() {
             // println!("get_passwords {} = {}", name, value.unwrap());
-            if (name == "domain") {
+            if name == "domain" {
                 domain = value.unwrap();
-            } else if (name == "password") {
+            } else if name == "password" {
                 password = value.unwrap();
             }
         }
