@@ -7,8 +7,10 @@
     The unhashed password will be used to encrypt and decrypt all the domain and passwords.
 */
 
+use serde::Serialize;
+
 // denotes an entry in the database.
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct Password {
     // website, app etc
     pub domain: String,

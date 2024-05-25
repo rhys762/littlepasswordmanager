@@ -1,6 +1,8 @@
 
 # About
 
+Tauri/rust/vuejs.
+
 This is a small, local password manager. It exists because
 
 - I wanted a local password manager.
