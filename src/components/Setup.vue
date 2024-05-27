@@ -35,8 +35,8 @@ async function setup() {
         <p class="error"> {{ err }} </p>
 
         <form @submit.prevent="setup">
-            <label for="password-input">Password</label> <input id="password-input" v-model="password" /> <br>
-            <label for="confirm-password-input">Confirm Password</label> <input id="confirm-password-input" v-model="confirmPassword" /> <br>
+            <input id="password-input" type="password" v-model="password" placeholder="Password" /> <br>
+            <input id="confirm-password-input" type="password" v-model="confirmPassword" placeholder="Confirm Password" /> <br>
             <button type="submit">Create</button>
         </form>
     </div>

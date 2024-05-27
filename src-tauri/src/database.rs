@@ -30,7 +30,7 @@ pub fn create_tables(conn: &sqlite::Connection) {
             CONSTRAINT domain_pk PRIMARY KEY (domain)
         );
     ";
-    conn.execute(query).unwrap();
+    conn.execute(query).expect("create_tables");
 }
 
 // get the master password hash, which the user will need to test against.
@@ -44,12 +44,11 @@ pub fn get_master_passwordhash(conn: &sqlite::Connection) -> String {
 
     conn.iterate(query, |pairs| {
         for &(_name, value) in pairs.iter() {
-            // println!("{} = {}", name, value.unwrap());
             hash = String::from(value.expect("Could not extract master password hash."));
         }
         true
     })
-    .unwrap();
+    .expect("get_master_passwordhash:iterate");
 
     hash
 }
@@ -58,9 +57,9 @@ pub fn get_master_passwordhash(conn: &sqlite::Connection) -> String {
 pub fn set_master_passwordhash(conn: &sqlite::Connection, master_hash: &String) {
     let query = "INSERT INTO master_password VALUES (?)";
 
-    let mut query = conn.prepare(query).unwrap();
-    query.bind((1, master_hash.as_str())).unwrap();
-    query.next().unwrap();
+    let mut query = conn.prepare(query).expect("set_master_passwordhash::prepare");
+    query.bind((1, master_hash.as_str())).expect("set_master_passwordhash::bind");
+    query.next().expect("set_master_passwordhash::next");
 }
 
 // inserts if domain already is present, else update.
@@ -70,9 +69,9 @@ pub fn update_password(conn: &sqlite::Connection, entry: &Password) {
         VALUES (:domain, :password)
     ";
 
-    let mut query = conn.prepare(query).unwrap();
-    query.bind((":domain", entry.domain.as_str())).unwrap();
-    query.bind((":password", entry.password.as_str())).unwrap();
+    let mut query = conn.prepare(query).expect("update_password::prepare");
+    query.bind((":domain", entry.domain.as_str())).expect("update_password::domain");
+    query.bind((":password", entry.password.as_str())).expect("update_password::passpord");
 
     query.next().unwrap();
 }
@@ -96,11 +95,10 @@ pub fn get_passwords(conn: &sqlite::Connection) -> Vec<Password> {
         let mut password = "";
 
         for &(name, value) in pairs.iter() {
-            // println!("get_passwords {} = {}", name, value.unwrap());
             if name == "domain" {
-                domain = value.unwrap();
+                domain = value.expect("get_passwords::domain");
             } else if name == "password" {
-                password = value.unwrap();
+                password = value.expect("get_passwords::password");
             }
         }
         let p = Password {
@@ -111,7 +109,7 @@ pub fn get_passwords(conn: &sqlite::Connection) -> Vec<Password> {
 
         true
     })
-    .unwrap();
+    .expect("get_passwords::iterate");
 
     vec
 }

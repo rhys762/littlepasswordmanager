@@ -1,13 +1,13 @@
 {
-  "name": "tauri",
+  "name": "little_password_manager",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "LPM_DB_PATH=../lpm.dev.sqlite3 tauri"
   },
   "dependencies": {
     "vue": "^3.3.4",

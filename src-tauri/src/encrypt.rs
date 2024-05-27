@@ -37,7 +37,7 @@ fn decrypt(master: &String, encrypted: &String) -> String {
     })
     .map(|str| {
         // HERE
-        str.parse::<u8>().unwrap()
+        str.parse::<u8>().expect("decrypt::encrypted")
     }));
 
     let decryptor = match age::Decryptor::new(&encrypted[..]).expect("") {

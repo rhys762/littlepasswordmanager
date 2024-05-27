@@ -1,13 +1,11 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-// TODO no unwraps
-
-use std::sync::Mutex;
-use tauri::{App, State};
+use std::{ sync::Mutex};
 
 mod database;
 mod encrypt;
+mod levenshtein;
 
 // app state
 struct LPMState {
@@ -63,8 +61,9 @@ fn login(state: tauri::State<LPMState>, password: &str) -> String {
     return String::new();
 }
 
-#[tauri::command]
-fn get_passwords(state: tauri::State<LPMState>) -> Vec<database::Password> {
+// async makes it not run on the main thread
+#[tauri::command(async)]
+fn get_passwords(state: tauri::State<LPMState>, filter: &str) -> Vec<database::Password> {
     let conn = sqlite::open(state.db_path.clone()).expect("get_passwords::conn");
     let password = state.password.lock().expect("get_passwords::password");
 
@@ -77,7 +76,25 @@ fn get_passwords(state: tauri::State<LPMState>) -> Vec<database::Password> {
         }));
     }
 
-    return passwords.clone();
+    let passwords = passwords.clone();
+
+    if filter.len() == 0 {
+        return passwords;
+    }
+
+    let mut passwords = Vec::from_iter(passwords.iter().map(|p| {
+        (p, levenshtein::levenshtein(&String::from(filter), &p.domain))
+    }));
+
+    passwords.sort_by(|a, b| {
+        return a.1.cmp(&b.1);
+    });
+
+    return  Vec::from_iter(passwords.iter().map(|pair| {
+        return pair.0.clone();
+    }));
+
+
 }
 
 #[tauri::command]
@@ -124,13 +141,20 @@ fn generate_password() -> String {
 }
 
 fn main() {
-    let db_path = "../lpm.sqlite3";
+    let default_name = ".little_password_manager.sqlite3";
+    let db_path = match std::env::var("LPM_DB_PATH") {
+        Ok(v) => String::from(v),
+        Err(_) => match std::env::var("HOME") {
+            Ok(v) => format!("{}/{}", v, default_name),
+            Err(_) => format!("./{}", default_name),
+        },
+    };
+
     let conn = sqlite::open(db_path.clone()).expect("main::conn");
     
     database::create_tables(&conn);
-    let hash = database::get_master_passwordhash(&conn);
 
-    let mut state = LPMState {
+    let state = LPMState {
         db_path: String::from(db_path),
         password: String::new().into(),
         passwords: Vec::new().into()

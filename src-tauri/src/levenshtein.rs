@@ -33,5 +33,5 @@ pub fn levenshtein(a: &String, b: &String) -> u32 {
         levenshtein(&tail_a, &b),
         // head of a replaced by head of b
         levenshtein(&tail_a, &tail_b)
-    ].iter().min().unwrap();
+    ].iter().min().expect("levenshtein::minimum");
 }

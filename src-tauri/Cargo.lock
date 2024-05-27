@@ -1804,6 +1804,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78b3ae25bc7c8c38cec158d1f2757ee79e9b3740fbc7ccf0e59e4b08d793fa89"
 
 [[package]]
+name = "little_password_manager"
+version = "0.0.0"
+dependencies = [
+ "age",
+ "rand 0.8.5",
+ "serde",
+ "serde_json",
+ "sha256",
+ "sqlite",
+ "tauri",
+ "tauri-build",
+]
+
+[[package]]
 name = "lock_api"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3196,20 +3210,6 @@ name = "target-lexicon"
 version = "0.12.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e1fc403891a21bcfb7c37834ba66a547a8f402146eba7265b5a6d88059c9ff2f"
-
-[[package]]
-name = "tauri"
-version = "0.0.0"
-dependencies = [
- "age",
- "rand 0.8.5",
- "serde",
- "serde_json",
- "sha256",
- "sqlite",
- "tauri 1.6.6",
- "tauri-build",
-]
 
 [[package]]
 name = "tauri"
