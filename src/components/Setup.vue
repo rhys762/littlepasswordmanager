@@ -1,26 +1,23 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { invoke } from "@tauri-apps/api/tauri";
-import { Pages } from "../Pages";
+import { useRouter } from 'vue-router';
+import { Binding } from "../binds";
 
-const emit = defineEmits(["redirect"]);
+const emit = defineEmits(["toast"]);
 
 const password = ref("");
 const confirmPassword = ref("");
-const err = ref("");
 
-// async function greet() {
-//   // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-//   greetMsg.value = await invoke("greet", { name: name.value });
-// }
+const router = useRouter();
 
 async function setup() {
-    err.value = await invoke("setup_master_password", {password: password.value, confirmPassword: confirmPassword.value});
+    const error = await Binding.setup_master_password(password.value, confirmPassword.value);
 
-    if (err.value) {
+    if (error) {
         confirmPassword.value = "";
+        emit("toast", error);
     } else {
-        emit("redirect", Pages.LOGIN);
+        router.push("/login");
     }
 }
 </script>
@@ -32,8 +29,6 @@ async function setup() {
 
         <div>No method for password recovery exists.</div>
 
-        <p class="error"> {{ err }} </p>
-
         <form @submit.prevent="setup">
             <input id="password-input" type="password" v-model="password" placeholder="Password" /> <br>
             <input id="confirm-password-input" type="password" v-model="confirmPassword" placeholder="Confirm Password" /> <br>
@@ -43,10 +38,6 @@ async function setup() {
 </template>
 
 <style scoped>
-
-.error {
-    color: red;
-}
 
 form * {
     margin: 10px;

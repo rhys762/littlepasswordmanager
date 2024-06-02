@@ -1,40 +1,37 @@
 <script setup lang="ts">
 // This starter template is using Vue 3 <script setup> SFCs
 // Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
-import Setup from "./components/Setup.vue";
-import Login from "./components/Login.vue";
-import ViewPassords from "./components/ViewPassords.vue";
-import CreatePassword from "./components/CreatePassword.vue";
 import Toast from "./components/Toast.vue";
 
-import { ref } from "vue";
-import { invoke } from "@tauri-apps/api/tauri";
-import { Pages } from "./Pages";
+import { ref, onMounted } from "vue";
+import { useRouter } from 'vue-router';
 
-let page = ref(Pages.NONE);
+import { Binding } from "./binds";
 
 let show_toast = ref(false);
 let toast_text = ref("");
+const router = useRouter();
 
-invoke("get_master_hash", {}).then((s) => {
-    const str = s as string;
-    console.log("got master hash", str);
+onMounted(() => {
+    Binding.get_master_hash().then((s) => {
+        console.log("have remounted app.");
+        const str = s as string;
+        console.log("got master hash", str);
 
-    if (str.length) {
-        page.value = Pages.LOGIN;
-    } else {
-        page.value = Pages.SETUP;
-    }
+        if (str.length) {
+            router.push("/login");
+            console.log("routing to login");
+        } else {
+            router.push("/setup");
+            console.log("routing to setup");
+        }
+    });
 });
 
 let toast_id = 0;
 function next_toast_id() {
     toast_id += 1;
     return toast_id;
-}
-
-function redirect(p: Pages) {
-    page.value = p;
 }
 
 function toast(str: string) {
@@ -51,14 +48,13 @@ function toast(str: string) {
     }, 100);
 }
 
+// router
+
 </script>
 
 <template>
     <div class="container">
-        <Setup v-if="page == Pages.SETUP" v-on:redirect="redirect" v-on:toast="toast"></Setup>
-        <Login v-if="page == Pages.LOGIN" v-on:redirect="redirect" v-on:toast="toast"></Login>
-        <ViewPassords v-if="page == Pages.VIEW_PASSWORDS" v-on:redirect="redirect" v-on:toast="toast"></ViewPassords>
-        <CreatePassword v-if="page == Pages.CREATE_PASSWORD" v-on:redirect="redirect" v-on:toast="toast"></CreatePassword>
+        <RouterView v-on:toast="toast" />
     </div>
     <Toast :text="toast_text" :show="show_toast"></Toast>
 </template>

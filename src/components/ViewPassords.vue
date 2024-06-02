@@ -1,23 +1,19 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { invoke } from "@tauri-apps/api/tauri";
-import { Pages } from "../Pages";
+import { useRouter } from 'vue-router';
+import { Binding, Password } from "../binds";
 
-const emit = defineEmits(["redirect", "toast"]);
 
-interface Password {
-    domain: string,
-    password: string
-}
+const emit = defineEmits(["toast"]);
 
 const passwords = ref([] as Password[]);
 const filter = ref("");
+const router = useRouter();
 
 // retrieve passwords
 function get_passwords() {
-    invoke("get_passwords", {
-        filter: filter.value
-    }).then(p => {
+    Binding.get_passwords(filter.value)
+    .then(p => {
         passwords.value = p as Password[];
     })
 }
@@ -29,8 +25,16 @@ function copy(text: string) {
     });
 }
 
+function edit(domain: string) {
+    router.push(`/create_password/${encodeURI(domain)}`);
+}
+
+function delet(domain: string) {
+    router.push(`/delete/${encodeURI(domain)}`);
+}
+
 onMounted(() => {
-    console.log("mounted.");
+    console.log("view passwords mounted.");
     get_passwords();
 });
 
@@ -39,7 +43,7 @@ onMounted(() => {
 <template>
     <div class="container">
         <h1>Passwords</h1>
-        <button @click="emit('redirect', Pages.CREATE_PASSWORD)">Add new Passord</button>
+        <button @click="router.push('/create_password')">Add new Password</button>
 
         <div class="filter">
             <span class="material-symbols-outlined search">search</span>
@@ -53,7 +57,8 @@ onMounted(() => {
 
             <div class="password"> {{ password.password }}</div>
             <span @click="copy(password.password)" class="copy material-symbols-outlined" title="Copy">content_copy</span>
-            <span class="material-symbols-outlined edit" title="Edit">edit</span>
+            <span @click="edit(password.domain)" class="material-symbols-outlined edit" title="Edit">edit</span>
+            <span @click="delet(password.domain)" class="material-symbols-outlined delete" title="Delete">delete</span>
 
         </div>
     </div>
@@ -144,6 +149,12 @@ button {
 }
 
 .edit {
+    color: #777;
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+.delete {
     color: #777;
     margin-left: 10px;
     cursor: pointer;

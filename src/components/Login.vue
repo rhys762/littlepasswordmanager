@@ -1,31 +1,32 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { invoke } from "@tauri-apps/api/tauri";
-import { Pages } from "../Pages";
 import Spinner from "./Spinner.vue";
-const emit = defineEmits(["redirect"]);
+import { useRouter } from 'vue-router';
+import { Binding } from "../binds";
+
+const emit = defineEmits(["toast"]);
 
 const password = ref("");
-const err = ref("");
 const loading = ref(false);
+
+const router = useRouter();
 
 function login() {
     loading.value = true;
 
-    invoke("login", {password: password.value}).then(e => {
-        err.value = e as string;
+    Binding.login(password.value).then(e => {
+        let toast = e as string;
         
 
-        if (err.value) {
+        if (toast.length > 0) {
             loading.value = false;
-            password.value = "";
+            emit("toast", toast);
         } else {
             // get passwords, backend will decrypt and cache,
             // ready for mount.
-            invoke("get_passwords", {
-                filter: ""
-            }).then(() => {
-                emit("redirect", Pages.VIEW_PASSWORDS);
+            Binding.get_passwords("")
+            .then(() => {
+                router.push("/view");
             });
         }
     });
@@ -36,8 +37,6 @@ function login() {
 <template>
     <div class="container">
         <h1>Login</h1>
-
-        <p class="error"> {{ err }} </p>
 
         <form @submit.prevent="login">
             <input type="password" id="password-input" v-model="password" placeholder="password" /> <br>

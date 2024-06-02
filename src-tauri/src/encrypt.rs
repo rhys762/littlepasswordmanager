@@ -8,7 +8,7 @@ pub fn hash_password(password: &String) -> String {
     return sha256::digest(password);
 }
 
-fn encrypt(master: &String, raw: &String) -> String {
+pub fn encrypt(master: &String, raw: &String) -> String {
     let encryptor = age::Encryptor::with_user_passphrase(Secret::new(master.to_owned()));
 
     let mut encrypted = vec![];
@@ -30,7 +30,7 @@ fn encrypt(master: &String, raw: &String) -> String {
     out
 }
 
-fn decrypt(master: &String, encrypted: &String) -> String {
+pub fn decrypt(master: &String, encrypted: &String) -> String {
     let encrypted = Vec::from_iter(encrypted.split(" ")
     .filter(|str| {
         str.len() > 0

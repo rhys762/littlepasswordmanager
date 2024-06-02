@@ -16,6 +16,11 @@ struct LPMState {
     passwords: Mutex<Vec<database::Password>>
 }
 
+#[tauri::command]
+fn log(s: &str) {
+    println!("{s}\n");
+}
+
 // retrieve master hash from db
 #[tauri::command]
 fn get_master_hash(state: tauri::State<LPMState>) -> String {
@@ -92,7 +97,7 @@ fn get_passwords(state: tauri::State<LPMState>, filter: &str) -> Vec<database::P
 
     return  Vec::from_iter(passwords.iter().map(|pair| {
         return pair.0.clone();
-    }));
+    })); 
 
 
 }
@@ -140,6 +145,39 @@ fn generate_password() -> String {
     return encrypt::random_password();
 }
 
+#[tauri::command]
+fn delete_password(state: tauri::State<LPMState>, domain: &str) {
+    let conn = sqlite::open(state.db_path.clone()).expect("delete_password::conn");
+    let password = state.password.lock().expect("get_passwords::password");
+    
+    // remove from local state
+    let mut passwords = state.passwords.lock().expect("get_passwords::passwords");
+    passwords.retain(|p| p.domain != domain);
+
+    // remove from db:
+    // re-get from db. AES apparently does not salt, but kept getting different values when
+    // trying to go the other way around. TODO, would be nice to not re-unencrypt the whole db
+    // every time a password is deleted. Maybe its a trailing space somewhere.
+    let passwords = database::get_passwords(&conn);
+
+    let mut pairs = passwords.iter().map(|p| {
+        return (p, encrypt::decrypt_password(&password, p));
+    });
+
+    let to_delete = pairs.find(|p| {
+        p.1.domain == domain
+    });
+
+    match to_delete {
+        Some(x) => {
+            let key = &x.0.domain;
+            database::delete_password(&conn, &key);
+        },
+        // Not in db?
+        None => {}
+    }    
+}
+
 fn main() {
     let default_name = ".little_password_manager.sqlite3";
     let db_path = match std::env::var("LPM_DB_PATH") {
@@ -163,12 +201,14 @@ fn main() {
     tauri::Builder::default()
         .manage(state)
         .invoke_handler(tauri::generate_handler![
+            log,
             get_master_hash,
             setup_master_password,
             get_passwords,
             login,
             create_password,
-            generate_password])
+            generate_password,
+            delete_password])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
