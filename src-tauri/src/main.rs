@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{ sync::Mutex};
+use std::{ ops::Deref, sync::Mutex};
 
 mod database;
 mod encrypt;
@@ -147,7 +147,6 @@ fn generate_password() -> String {
 
 #[tauri::command]
 fn delete_password(state: tauri::State<LPMState>, domain: &str) {
-    let conn = sqlite::open(state.db_path.clone()).expect("delete_password::conn");
     let password = state.password.lock().expect("get_passwords::password");
     
     // remove from local state
@@ -158,24 +157,31 @@ fn delete_password(state: tauri::State<LPMState>, domain: &str) {
     // re-get from db. AES apparently does not salt, but kept getting different values when
     // trying to go the other way around. TODO, would be nice to not re-unencrypt the whole db
     // every time a password is deleted. Maybe its a trailing space somewhere.
-    let passwords = database::get_passwords(&conn);
+    let db_path = state.db_path.clone();
+    let password = String::from(password.deref());
+    let domain = String::from(domain);
+    std::thread::spawn (move || {
+        let conn = sqlite::open(db_path).expect("delete_password::conn");
+        let passwords = database::get_passwords(&conn);
 
-    let mut pairs = passwords.iter().map(|p| {
-        return (p, encrypt::decrypt_password(&password, p));
-    });
+        let mut pairs = passwords.iter().map(|p| {
+            return (p, encrypt::decrypt_password(&password, p));
+        });
 
-    let to_delete = pairs.find(|p| {
-        p.1.domain == domain
-    });
+        let to_delete = pairs.find(|p| {
+            p.1.domain == domain
+        });
 
-    match to_delete {
-        Some(x) => {
-            let key = &x.0.domain;
-            database::delete_password(&conn, &key);
-        },
-        // Not in db?
-        None => {}
-    }    
+        match to_delete {
+            Some(x) => {
+                let key = &x.0.domain;
+                database::delete_password(&conn, &key);
+                print!("finished delete :)\n");
+            },
+            // Not in db?
+            None => {}
+        } 
+    });   
 }
 
 fn main() {
