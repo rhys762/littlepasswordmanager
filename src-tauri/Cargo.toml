@@ -1,6 +1,6 @@
 [package]
 name = "little_password_manager"
-version = "0.0.0"
+version = "1.0.0"
 description = "a local password manager"
 authors = ["rhys trueman"]
 edition = "2021"
