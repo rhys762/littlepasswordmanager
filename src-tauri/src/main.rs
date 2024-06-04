@@ -151,7 +151,11 @@ fn delete_password(state: tauri::State<LPMState>, domain: &str) {
     
     // remove from local state
     let mut passwords = state.passwords.lock().expect("get_passwords::passwords");
-    passwords.retain(|p| p.domain != domain);
+    *passwords = Vec::from_iter(passwords.iter().filter(|p| {
+        p.domain != domain
+    }).map(|p| {
+        p.clone()
+    }));
 
     // remove from db:
     // re-get from db. AES apparently does not salt, but kept getting different values when
@@ -176,7 +180,6 @@ fn delete_password(state: tauri::State<LPMState>, domain: &str) {
             Some(x) => {
                 let key = &x.0.domain;
                 database::delete_password(&conn, &key);
-                print!("finished delete :)\n");
             },
             // Not in db?
             None => {}
